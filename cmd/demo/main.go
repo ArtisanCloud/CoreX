@@ -1,16 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"strings"
-	"time"
 
+	apiHttp "github.com/ArtisanCloud/CoreX/api/http"
 	"github.com/ArtisanCloud/CoreX/config"
+	httpRouter "github.com/ArtisanCloud/CoreX/internal/http"
 	"github.com/ArtisanCloud/CoreX/pkg/auth"
 	"github.com/ArtisanCloud/CoreX/pkg/event_bus"
-	"github.com/ArtisanCloud/CoreX/pkg/low_code"
 	"github.com/ArtisanCloud/CoreX/pkg/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -40,28 +39,6 @@ func loadConfig() (*config.Config, error) {
 	return cfg, nil
 }
 
-// printRouteInfo 打印路由信息
-func printRouteInfo(r *gin.Engine, cfg *config.Config) {
-	fmt.Println()
-	fmt.Println("📋 已注册的 API 路由（摘要）:")
-	fmt.Println("┌─────────────────────────────────────────────────────────────┐")
-	fmt.Printf("│ 服务地址: http://localhost:%-29d│\n", cfg.Server.Port)
-	fmt.Println("├─────────────────────────────────────────────────────────────┤")
-	routes := r.Routes()
-	if len(routes) == 0 {
-		fmt.Println("│ (未发现已注册路由，请确认路由是否在 bootstrap 阶段同步注册)        │")
-	}
-	for _, route := range routes {
-		authStatus := "公开"
-		if strings.HasPrefix(route.Path, "/api/") {
-			authStatus = "🔒 需要 JWT"
-		}
-		fmt.Printf("│ %-6s %-25s - %-10s │\n", route.Method, route.Path, authStatus)
-	}
-	fmt.Println("└─────────────────────────────────────────────────────────────┘")
-	fmt.Println()
-}
-
 func main() {
 	// 1. 加载统一配置
 	cfg, err := loadConfig()
@@ -86,10 +63,12 @@ func main() {
 	initEventBus()
 
 	// 5. 构建 router 并挂载路由
-	r := initRouter(authMiddleware, cfg)
+	r := httpRouter.SetupRouter(authMiddleware, func(r *gin.Engine) {
+		apiHttp.RegisterAPIRoutes(r, authMiddleware, cfg)
+	})
 
 	// 6. 打印路由信息
-	printRouteInfo(r, cfg)
+	httpRouter.PrintRouteInfo(r, cfg)
 
 	// 7. 启动服务
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
@@ -103,7 +82,7 @@ func initLogger(cfg *config.Config) error {
 	logger.InitGlobalLogger(&cfg.LogConfig)
 
 	// 测试全局Logger是否工作正常
-	logger.Info("🚀 全局Logger初始化成功")
+	logger.Info(context.Background(), "🚀 全局Logger初始化成功")
 	return nil
 }
 
@@ -148,122 +127,4 @@ func initEventBus() {
 		}
 		return nil
 	})
-}
-
-// initRouter 构造 gin 引擎并挂载路由
-func initRouter(authMiddleware gin.HandlerFunc, cfg *config.Config) *gin.Engine {
-	r := gin.Default()
-
-	// 公开健康检查
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
-
-	// 公开的JWT令牌生成端点（仅用于开发测试）
-	r.POST("/auth/generate_token", func(c *gin.Context) {
-		var req struct {
-			TenantID string `json:"tenant_id" binding:"required"`
-			Subject  string `json:"subject" binding:"required"`
-			Platform string `json:"platform"`
-			Audience string `json:"audience"`
-			Scope    string `json:"scope"`
-			TTL      int    `json:"ttl_hours"` // 小时数
-		}
-
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误", "detail": err.Error()})
-			return
-		}
-
-		// 设置默认值
-		if req.Platform == "" {
-			req.Platform = "web"
-		}
-		if req.Audience == "" {
-			req.Audience = "admin"
-		}
-		if req.Scope == "" {
-			req.Scope = "flow:execute"
-		}
-		if req.TTL == 0 {
-			req.TTL = 24 // 默认24小时
-		}
-
-		// 生成JWT令牌
-		token, err := auth.GenerateJWT(
-			req.TenantID,
-			req.Subject,
-			req.Platform,
-			req.Audience,
-			req.Scope,
-			time.Duration(req.TTL)*time.Hour,
-			[]byte(cfg.Auth.JWTSecret),
-		)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "生成令牌失败", "detail": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"token":      token,
-			"tenant_id":  req.TenantID,
-			"subject":    req.Subject,
-			"platform":   req.Platform,
-			"audience":   req.Audience,
-			"scope":      req.Scope,
-			"expires_in": req.TTL * 3600, // 秒数
-			"usage":      fmt.Sprintf("curl -X POST http://localhost:%d/api/start_flow -H \"Authorization: Bearer %s\" -H \"Content-Type: application/json\"", cfg.Server.Port, token),
-		})
-	})
-
-	// 受保护组
-	protected := r.Group("/api")
-	protected.Use(authMiddleware)
-
-	// 启动 flow 示例
-	protected.POST("/start_flow", func(c *gin.Context) {
-		ctx := c.Request.Context()
-		tenant := auth.GetTenantID(ctx)
-		subject := auth.GetSubject(ctx)
-		traceID := auth.GetTraceID(ctx)
-
-		flow := low_code.Flow{
-			Name: "example_flow",
-			Steps: []low_code.Step{
-				{
-					ToolName: "apply_tag",
-					Input: map[string]interface{}{
-						"customer_id": "c-123",
-						"tag":         "vip",
-					},
-				},
-			},
-		}
-		if err := low_code.ExecuteFlow(ctx, flow); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		event_bus.Publish(event_bus.Event{
-			Name: "flow_completed",
-			Payload: map[string]interface{}{
-				"tenant_id": tenant,
-				"flow_name": flow.Name,
-				"subject":   subject,
-				"trace_id":  traceID,
-			},
-			Ctx: ctx,
-			ID:  traceID,
-		})
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":    "flow executed",
-			"tenant":    tenant,
-			"subject":   subject,
-			"trace_id":  traceID,
-			"flow_name": flow.Name,
-		})
-	})
-
-	return r
 }

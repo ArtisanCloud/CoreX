@@ -122,47 +122,98 @@ func GetLogger(c *config.LogConfig) *Logger {
 }
 
 func (l *Logger) WithContext(ctx context.Context) *Logger {
+	// 从 context 中提取常用的字段
+	fields := l.extractFieldsFromContext(ctx)
+	if len(fields) > 0 {
+		// 创建一个带有 context 字段的新 logger
+		return &Logger{
+			driver: l.driver.With(fields...),
+			config: l.config,
+		}
+	}
 	return l
 }
 
-// Info 输出 Info 日志
-func (l *Logger) Info(msg string, fields ...zap.Field) {
-	l.driver.Info(msg, fields...)
+// extractFieldsFromContext 从 context 中提取日志字段
+func (l *Logger) extractFieldsFromContext(ctx context.Context) []zap.Field {
+	var fields []zap.Field
+
+	// 提取请求ID
+	if requestID := ctx.Value("request_id"); requestID != nil {
+		if id, ok := requestID.(string); ok && id != "" {
+			fields = append(fields, zap.String("request_id", id))
+		}
+	}
+
+	// 提取用户ID
+	if userID := ctx.Value("user_id"); userID != nil {
+		if id, ok := userID.(string); ok && id != "" {
+			fields = append(fields, zap.String("user_id", id))
+		}
+	}
+
+	// 提取会话ID
+	if sessionID := ctx.Value("session_id"); sessionID != nil {
+		if id, ok := sessionID.(string); ok && id != "" {
+			fields = append(fields, zap.String("session_id", id))
+		}
+	}
+
+	// 提取跟踪ID
+	if traceID := ctx.Value("trace_id"); traceID != nil {
+		if id, ok := traceID.(string); ok && id != "" {
+			fields = append(fields, zap.String("trace_id", id))
+		}
+	}
+
+	// 提取操作名称
+	if operation := ctx.Value("operation"); operation != nil {
+		if op, ok := operation.(string); ok && op != "" {
+			fields = append(fields, zap.String("operation", op))
+		}
+	}
+
+	return fields
 }
 
-// Error 输出 Error 日志
-func (l *Logger) Error(msg string, fields ...zap.Field) {
-	l.driver.Error(msg, fields...)
+// Info 输出 Info 日志 - 支持 context 作为第一个参数
+func (l *Logger) Info(ctx context.Context, msg string, fields ...zap.Field) {
+	l.WithContext(ctx).driver.Info(msg, fields...)
 }
 
-// Debug 输出 Debug 日志
-func (l *Logger) Debug(msg string, fields ...zap.Field) {
-	l.driver.Debug(msg, fields...)
+// Error 输出 Error 日志 - 支持 context 作为第一个参数
+func (l *Logger) Error(ctx context.Context, msg string, fields ...zap.Field) {
+	l.WithContext(ctx).driver.Error(msg, fields...)
 }
 
-// Warn 输出 Warn 日志
-func (l *Logger) Warn(msg string, fields ...zap.Field) {
-	l.driver.Warn(msg, fields...)
+// Debug 输出 Debug 日志 - 支持 context 作为第一个参数
+func (l *Logger) Debug(ctx context.Context, msg string, fields ...zap.Field) {
+	l.WithContext(ctx).driver.Debug(msg, fields...)
 }
 
-// InfoF 格式化后输出 Info 日志
-func (l *Logger) InfoF(format string, args ...interface{}) {
-	l.driver.Info(fmt.Sprintf(format, args...))
+// Warn 输出 Warn 日志 - 支持 context 作为第一个参数
+func (l *Logger) Warn(ctx context.Context, msg string, fields ...zap.Field) {
+	l.WithContext(ctx).driver.Warn(msg, fields...)
 }
 
-// ErrorF 格式化后输出 Error 日志
-func (l *Logger) ErrorF(format string, args ...interface{}) {
-	l.driver.Error(fmt.Sprintf(format, args...))
+// InfoF 格式化后输出 Info 日志 - 支持 context 作为第一个参数
+func (l *Logger) InfoF(ctx context.Context, format string, args ...interface{}) {
+	l.WithContext(ctx).driver.Info(fmt.Sprintf(format, args...))
 }
 
-// DebugF 格式化后输出 Debug 日志
-func (l *Logger) DebugF(format string, args ...interface{}) {
-	l.driver.Debug(fmt.Sprintf(format, args...))
+// ErrorF 格式化后输出 Error 日志 - 支持 context 作为第一个参数
+func (l *Logger) ErrorF(ctx context.Context, format string, args ...interface{}) {
+	l.WithContext(ctx).driver.Error(fmt.Sprintf(format, args...))
 }
 
-// WarnF 格式化后输出 Warn 日志
-func (l *Logger) WarnF(format string, args ...interface{}) {
-	l.driver.Warn(fmt.Sprintf(format, args...))
+// DebugF 格式化后输出 Debug 日志 - 支持 context 作为第一个参数
+func (l *Logger) DebugF(ctx context.Context, format string, args ...interface{}) {
+	l.WithContext(ctx).driver.Debug(fmt.Sprintf(format, args...))
+}
+
+// WarnF 格式化后输出 Warn 日志 - 支持 context 作为第一个参数
+func (l *Logger) WarnF(ctx context.Context, format string, args ...interface{}) {
+	l.WithContext(ctx).driver.Warn(fmt.Sprintf(format, args...))
 }
 
 // InitGlobalLogger 初始化全局Logger实例
@@ -193,44 +244,44 @@ func GetGlobalLogger() *Logger {
 	return globalInstance
 }
 
-// 全局便捷函数
+// 全局便捷函数 - 支持 context 作为第一个参数
 
 // Info 全局Info日志
-func Info(msg string, fields ...zap.Field) {
-	GetGlobalLogger().Info(msg, fields...)
+func Info(ctx context.Context, msg string, fields ...zap.Field) {
+	GetGlobalLogger().Info(ctx, msg, fields...)
 }
 
 // Error 全局Error日志
-func Error(msg string, fields ...zap.Field) {
-	GetGlobalLogger().Error(msg, fields...)
+func Error(ctx context.Context, msg string, fields ...zap.Field) {
+	GetGlobalLogger().Error(ctx, msg, fields...)
 }
 
 // Debug 全局Debug日志
-func Debug(msg string, fields ...zap.Field) {
-	GetGlobalLogger().Debug(msg, fields...)
+func Debug(ctx context.Context, msg string, fields ...zap.Field) {
+	GetGlobalLogger().Debug(ctx, msg, fields...)
 }
 
 // Warn 全局Warn日志
-func Warn(msg string, fields ...zap.Field) {
-	GetGlobalLogger().Warn(msg, fields...)
+func Warn(ctx context.Context, msg string, fields ...zap.Field) {
+	GetGlobalLogger().Warn(ctx, msg, fields...)
 }
 
 // InfoF 全局格式化Info日志
-func InfoF(format string, args ...interface{}) {
-	GetGlobalLogger().InfoF(format, args...)
+func InfoF(ctx context.Context, format string, args ...interface{}) {
+	GetGlobalLogger().InfoF(ctx, format, args...)
 }
 
 // ErrorF 全局格式化Error日志
-func ErrorF(format string, args ...interface{}) {
-	GetGlobalLogger().ErrorF(format, args...)
+func ErrorF(ctx context.Context, format string, args ...interface{}) {
+	GetGlobalLogger().ErrorF(ctx, format, args...)
 }
 
 // DebugF 全局格式化Debug日志
-func DebugF(format string, args ...interface{}) {
-	GetGlobalLogger().DebugF(format, args...)
+func DebugF(ctx context.Context, format string, args ...interface{}) {
+	GetGlobalLogger().DebugF(ctx, format, args...)
 }
 
 // WarnF 全局格式化Warn日志
-func WarnF(format string, args ...interface{}) {
-	GetGlobalLogger().WarnF(format, args...)
+func WarnF(ctx context.Context, format string, args ...interface{}) {
+	GetGlobalLogger().WarnF(ctx, format, args...)
 }
