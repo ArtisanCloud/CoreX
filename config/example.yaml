@@ -1,0 +1,49 @@
+server:
+  port: 8080
+  read_timeout_seconds: 5
+  write_timeout_seconds: 10
+  mode: debug
+
+logging_config:
+  level: "debug"
+  console: true
+  useJsonFormat: false
+  file:
+    enable: false
+    infoFilePath: "logs/info.log"
+    errorFilePath: "logs/error.log"
+    maxSize: 100
+    maxBackups: 5
+    maxAge: 30
+    compress: true
+  loki:
+    enable: false
+    url: ""
+    jobName: "corex"
+    batchWait: 1
+    batchSize: 100
+  httpDebug: false
+  debug: true
+
+auth:
+  jwt_secret: "K8mN2pQ7rS9tU4vW6xY1zA3bC5dE8fG0"
+  expected_audience: "admin"
+  required_scopes:
+    - "flow:execute"
+  token_ttl_hours: 24
+
+event_bus:
+  type: "local" # 或 "redis"
+  redis_addr: "localhost:6379"
+  redis_password: ""
+  dedupe_ttl_sec: 30
+
+low_code:
+  max_concurrent_flows: 10
+  default_timeout_sec: 60
+
+agent_tools:
+  enable_audit: true
+
+feature_gate:
+  license_key: "demo-license-xyz"

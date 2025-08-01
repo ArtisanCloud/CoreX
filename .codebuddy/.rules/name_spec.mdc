@@ -38,7 +38,7 @@
 
 1. **Go 包和目录**：全部使用下划线分词（snake\_case），小写，不使用驼峰，不合并词。例：`agent_tools`, `event_bus`, `low_code`。类型、结构体、接口在代码中使用驼峰（如 `EventBus`, `LowCodeFlow`）。
 2. **配置与 YAML 字段**：使用下划线命名（snake\_case），保持与目录一致；例如 `flow_definition`, `trigger_event`。
-3. **环境变量**：全部大写，下划线分隔，例如 `COREX_LICENSE_KEY`, `AGENT_TOOLS_ENABLED`。
+3. **环境变量**：全部大写，下划线分隔，例如 `CORE_X_LICENSE_KEY`, `AGENT_TOOLS_ENABLED`。
 4. **前端资源/组件**：使用 kebab-case（短横线），便于 URL 与文件系统区分，如 `workflow-builder`, `plugin-ui`。
 5. **文件名**：Go 源文件用小写下划线，如 `flow_executor.go`, `feature_flag.go`；测试文件对应 `flow_executor_test.go`。
 

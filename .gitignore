@@ -85,3 +85,6 @@ yarn-error.log*
 # 部署相关
 docker-compose.override.yml
 k8s/secrets/
+
+
+cmd/demo/__debug*
