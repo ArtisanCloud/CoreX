@@ -1,0 +1,290 @@
+
+---
+
+## 一、总体原则（选一个风格，一致用）
+
+### 统一决策（按照你的要求：不合并词，全部用下划线）
+
+* 所有目录/包名 **全部采用 snake\_case（下划线分词）**，不使用合并词、驼峰或混合。可读性高，直观。
+* 前端资源目录也统一用 kebab-case 用于区分，例如 `workflow-builder`、`plugin-ui`。
+
+举例（CoreX 后端）：
+
+```
+/pkg/
+  auth/
+  license/
+  plugin/
+  agent_tools/
+  event_bus/
+  low_code/
+  comm/
+    websocket/
+    sse/
+```
+
+前端示例：
+
+```
+/admin-ui/
+  src/
+  workflow-builder/
+  plugin-host/
+```
+
+---
+
+## 二、补充：文件/模块命名细则
+
+1. **Go 包和目录**：全部使用下划线分词（snake\_case），小写，不使用驼峰，不合并词。例：`agent_tools`, `event_bus`, `low_code`。类型、结构体、接口在代码中使用驼峰（如 `EventBus`, `LowCodeFlow`）。
+2. **配置与 YAML 字段**：使用下划线命名（snake\_case），保持与目录一致；例如 `flow_definition`, `trigger_event`。
+3. **环境变量**：全部大写，下划线分隔，例如 `COREX_LICENSE_KEY`, `AGENT_TOOLS_ENABLED`。
+4. **前端资源/组件**：使用 kebab-case（短横线），便于 URL 与文件系统区分，如 `workflow-builder`, `plugin-ui`。
+5. **文件名**：Go 源文件用小写下划线，如 `flow_executor.go`, `feature_flag.go`；测试文件对应 `flow_executor_test.go`。
+
+## 三、Lint 规则示例（快速校验命名一致性）
+
+这是一个简单的 Bash 脚本骨架，用来检查后端目录/包名是否违反 snake\_case 规则（例如意外出现大写字母或驼峰）：
+
+```bash
+#!/usr/bin/env bash
+set -e
+
+# 检查所有目录和 .go 文件名是否符合 snake_case（允许下划线和小写）
+bad=0
+
+echo "检查不符合 snake_case 的目录/文件..."
+find . -type d | while read -r dir; do
+  base=$(basename "$dir")
+  if [[ "$base" =~ [A-Z] ]]; then
+    echo "目录含大写或非 snake_case: $dir"
+    bad=1
+  fi
+  if [[ "$base" =~ [^a-z0-9_] ]]; then
+    echo "目录含非法字符: $dir"
+    bad=1
+  fi
+done
+
+find . -name '*.go' | while read -r file; do
+  name=$(basename "$file")
+  if [[ "$name" =~ [A-Z] ]]; then
+    echo "Go 文件名含大写: $file"
+    bad=1
+  fi
+  # 允许下划线和 .
+  if [[ ! "$name" =~ ^[a-z0-9_\.]+\.go$ ]]; then
+    echo "Go 文件名不符合 snake_case 规范: $file"
+    bad=1
+  fi
+done
+
+if [[ $bad -ne 0 ]]; then
+  echo "命名规范检查未通过" >&2
+  exit 1
+fi
+
+echo "命名规范检查通过" 
+```
+
+可以集成到 CI，比如在 Pull Request 时跑一次。
+
+## 四、示例：CoreX 启动 Bootstrap 结构（遵循命名）
+
+```go
+package main
+
+import (
+    "context"
+    "github.com/ArtisanCloud/CoreX/pkg/plugin"
+    "github.com/ArtisanCloud/CoreX/pkg/agent_tools"
+    "github.com/ArtisanCloud/CoreX/pkg/feature_flag"
+    "github.com/ArtisanCloud/CoreX/pkg/license"
+    "github.com/ArtisanCloud/CoreX/pkg/event_bus"
+)
+
+func main() {
+    ctx := context.Background()
+    tenantID := "t-1001" // 从 auth 上下文
+
+    // 初始化插件系统
+    plugin.Init()
+
+    // 注册基础插件（例如 customer_tag_sync）
+    // customer_tag_sync.Register(plugin.Registry())
+
+    // 条件性加载 Pro extension
+    if feature_flag.Enabled("advanced_profile", tenantID) {
+        // advanced_profile.Register(plugin.Registry())
+    }
+
+    // 构建 agent tool registry
+    tool_registry := agent_tools.New_registry()
+    // tool_registry.Register(New_apply_tag_tool(...))
+
+    // 启动事件总线
+    eb := event_bus.New_event_bus()
+    _ = eb
+
+    // 继续构造 HTTP/gRPC, WebSocket, SSE
+}
+```
+
+## 五、建议的配套文档清单（统一命名风格下）
+
+* `style_guide.md`：命名规范、目录约定、代码风格、前端/后端区别。
+* `flow_schema.md`：low\_code flow 定义字段、条件 DSL、变量模板。
+* `tool_contracts.md`：agent\_tools 接口输入输出、权限、错误格式。
+* `plugin_development.md`：插件如何实现并注册，extension point 描述。
+* `agent_prompt_templates.md`：智能体 prompt 到 flow/tool 的映射模板。
+* `license_and_gating.md`：license 格式、feature\_flag 规则、Pro gating 逻辑。
+* `deployment.md`：独立服务 vs 嵌入式部署、环境变量一览。
+
+## 六、下一步建议
+
+1. 把这份命名规范 + 目录结构做成 README 和 CI linter hook。
+2. 生成 scaffold 脚本（目录 + 空模板文件，含注释说明）严格照 snake\_case 结构。
+3. 写一套 agent prompt 模板让 AI coder 按此风格输出代码（例如："请创建一个符合 snake\_case 的 flow\_executor.go 文件，包含注释..."）。
+
+---
+
+## 七、完整项目目录展开（CoreX）与每项职责
+
+以下目录树是推荐的 CoreX 结构，所有目录/包/文件遵循 snake\_case 命名。每一项后面附带作用描述和典型子文件说明。
+
+```
+/CoreX/
+  go.mod                          # go module 定义
+  /cmd/
+    /demo/                        # 示例启动器（参考实现，用于本地调试、集成测试）
+      main.go                     # 引导 bootstrap（初始化 plugin, agent_tools, event_bus, http/grpc/ws/sse）
+  /pkg/                           # 暴露给下游的能力库
+    /auth/                        # 认证与鉴权
+      middleware.go              # HTTP/gRPC 中间件验证 token、注入上下文
+      session.go                 # token 生成/刷新、可扩展 SSO 联动
+    /license/                     # license 与 feature gating
+      checker.go                # 解析 license、判断 pro/basic / 限额 / 灰度
+      feature_flag.go           # 细粒度功能开关（由 license 驱动）
+    /plugin/                      # 插件系统核心
+      loader.go                 # 插件系统初始化与生命周期管理（singleton）
+      registry.go               # 各 extension point 注册/查询中心
+      extension_point.go        # 插件接口定义（如 on_tag_applied, on_flow_completed）
+      base.go                   # 插件元信息、基础 lifecycle 接口
+    /agent_tools/                # 智能体可调用能力抽象
+      tool.go                  # Tool 接口定义（Name/Execute/Permissions）
+      registry.go              # 注册与查找 tool 的中心
+      middleware.go            # 执行前上下文注入、审计、限流包装
+    /event_bus/                  # 事件总线（内部解耦）
+      bus.go                   # 发布/订阅核心逻辑
+      subscriber.go           # 订阅封装（支持过滤/重试/幂等）
+    /low_code/                  # 低代码 workflow/form 引擎
+      schema.go               # flow/form 定义 schema（trigger/condition/steps/vars）
+      form_executor.go        # 表单解析/验证/映射
+      flow_executor.go        # flow 运行时调度（条件、tool 调用、嵌套、状态）
+    /comm/                      # 实时通信层
+      /websocket/              # WebSocket 实现
+        hub.go                # 连接管理 / topic 订阅 / 广播
+        handler.go            # 升级入口 / 绑定 session
+        auth_middleware.go    # 鉴权后的 socket context 注入
+        message.go            # 统一事件封包格式
+      /sse/                    # Server-Sent Events
+        manager.go            # client 管理与事件推送
+        handler.go            # HTTP 接口建立持久连接
+    /utils/                    # 通用工具
+      logger.go               # 结构化日志 + trace id
+      validator.go           # schema / input 验证 helpers
+      mask.go                # 脱敏处理（admin vs miniapp 视图模式）
+      context_key.go         # context key 常量避免冲突
+  /internal/                     # 不暴露的实现细节（可按需拆成子包）
+    /storage/                   # 持久化抽象（可插 GORM / mock 实现）
+    /http/                      # 共享 HTTP 辅助逻辑
+      router.go                # 通用路由组构造函数（挂 middleware）
+      middleware.go            # error handling / request logging / feature injection
+  /api/                         # CoreX 可运行时暴露的接口
+    /http/
+      router.go                # 高阶路由组合（agent/tool/orchestrator/health）
+      /agent/
+        tool_controller.go     # REST Proxy 执行 tool（POST /api/v1/agent/tools/{name}）
+        orchestrator_controller.go # 高阶 flow 启动 / prompt-to-flow 接口
+      health.go                # 子系统探活（license/plugin/event_bus 状态）
+    /grpc/
+      /v1/
+        agent_service.proto    # gRPC contract: ExecuteTool, StartFlow, GetFlowStatus 等
+        agent_service.pb.go     # 生成的 Go stub
+      /interceptors/
+        auth_interceptor.go    # gRPC 认证/上下文注入
+        license_interceptor.go # feature gating 拦截
+        error_mapper.go        # 错误到 status 映射统一化
+  /docs/                        # 配套文档（示例 + 规范）
+    style_guide.md             # 命名/结构/编码风格（本规范）
+    flow_schema.md            # low_code flow/form 定义详情 + 变量模板
+    tool_contracts.md         # agent_tools 输入输出/权限/错误约定
+    plugin_development.md     # 写插件 & 注册 extension point 说明
+    agent_prompt_templates.md # 智能体 prompt 到 flow/tool 映射模板
+    license_and_gating.md     # license 格式 / 特性开关 / Pro gating 逻辑
+    deployment.md            # 嵌入式 vs 远程服务部署指南
+```
+
+## 八、关键子系统详细作用说明（进一步拆解）
+
+### 1. 认证/鉴权（pkg/auth）
+
+* 统一对外请求做身份验证，支持 JWT 和 API Key。
+* 注入 tenant\_id、user\_id 进 context，为 downstream 逻辑（tool/plugin/flow）提供上下文。
+* 支持角色权限检查（admin、agent、read\_only 等）。
+
+### 2. license 与 feature gating（pkg/license）
+
+* 多租户 license 管理（包含试用、Pro/Basic、灰度开关、限额控制）。
+* 通过 feature\_flag 决定某些 extension 或 tool 是否可用（如高级画像只能在 pro 下激活）。
+
+### 3. 插件系统（pkg/plugin）
+
+* 抽象 extension point，让业务在运行时动态挂钩行为（如标签变更同步、flow 完成触发后续）。
+* 插件注册中心负责任何插件的注册/生命周期（初始化/验证/清理）。
+* 可以做第三方扩展、用户自定义插件加载。
+
+### 4. Agent Tools（pkg/agent\_tools）
+
+* 标准化智能体可调用操作单元（apply\_tag、get\_customer\_profile、start\_flow、send\_message 等）。
+* 每个 tool 限定名称、权限、输入输出结构，便于 router 逻辑调度和组合。
+* 支持中间件链：上下文注入、审计记录、速率限制、降级 fallback。
+
+### 5. 事件总线（pkg/event\_bus）
+
+* 用于解耦触发源（外部 webhook/flow 结果/定时任务）和消费者（plugin/flow/agent）。
+* 支持同步/异步订阅、条件过滤、重试、去重保障。
+
+### 6. 低代码执行（pkg/low\_code）
+
+* Flow 定义是数据（YAML/JSON）：触发器、条件、调用的 tool、嵌套旅程。
+* 执行器负责生命周期（实例化、步骤执行、分支跳转、错误处理、状态追踪）。
+* 表单执行器提供输入到业务参数的自动映射和平台差异处理（脱敏/字段变换）。
+
+### 7. 实时通信（pkg/comm）
+
+* WebSocket hub 用于 agent/前端订阅 flow 进度、插件反馈、状态更新。
+* SSE 适合轻量状态流（dashboard 订阅多个 flow summary）。
+* 标准化消息格式带 trace id，便于全链路关联与回放。
+
+### 8. API 入口（HTTP + gRPC）
+
+* 提供 smart agent 直接调用的 REST/gRPC 接口（执行 tool、启动 flow、查询状态）。
+* health endpoint 让部署系统做依赖健康监控。
+* 拦截器统一处理 auth/license/error，保证上层不用重复处理。
+
+## 九、典型使用场景流程（举例）
+
+1. Agent 获取高价值客户画像：调用 `get_customer_profile` tool（内部走 pro extension 画像逻辑）。
+2. 满足条件后，Agent 调用 `apply_tag` tool 给客户打 VIP 标签，触发 `on_tag_applied` plugin 同步到外部系统。
+3. Agent 启动一个复购旅程 flow（通过 `start_flow`），flow\_executor 评估步骤、发消息、调度后续。
+4. 所有阶段状态通过 WebSocket 推送给前端管理界面，失败时有回滚/重试并写入 event\_bus 供审计插件消费。
+
+## 十、扩展与集成方式
+
+* 嵌入式：在 PowerX 中直接 import `github.com/ArtisanCloud/CoreX/pkg/...`，在 bootstrap 里注册 plugin 与 tool。
+* 远程服务：CoreX 单独部署，PowerX/其他系统通过 REST/gRPC 调用 tool/orchestrator 接口复用能力。
+* 插件市场：外部插件按约定格式放在指定目录，可动态加载并通过 license 控制开启。
+
+```
+```

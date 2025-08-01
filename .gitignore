@@ -1,0 +1,87 @@
+# 二进制文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试二进制文件，使用go test -c构建
+*.test
+
+# 输出的二进制文件（如果名称不是.gitignore）
+*.out
+
+# Go工作区文件
+go.work
+
+# 依赖目录（vendor/）
+vendor/
+
+# Go模块下载缓存
+go.sum
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# IDE和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+
+# 构建输出
+build/
+dist/
+bin/
+
+# 配置文件（包含敏感信息）
+config/local.yaml
+config/production.yaml
+*.key
+*.pem
+*.crt
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 缓存目录
+.cache/
+
+# 测试覆盖率文件
+coverage.out
+coverage.html
+
+# 文档生成文件
+docs/build/
+
+# Node.js相关（如果有前端资源）
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 部署相关
+docker-compose.override.yml
+k8s/secrets/
