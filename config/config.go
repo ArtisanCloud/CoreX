@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	logCfg "github.com/ArtisanCloud/CoreX/pkg/logger/config"
+	logCfg "github.com/ArtisanCloud/CoreX/pkg/utils/logger/config"
 )
 
 // CoreX 全局配置

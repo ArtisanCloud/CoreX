@@ -13,7 +13,7 @@ CoreX提供了强大的全局Logger系统，支持多种输出方式（控制台
 ```go
 import (
     "github.com/ArtisanCloud/CoreX/config"
-    "github.com/ArtisanCloud/CoreX/pkg/logger"
+    "github.com/ArtisanCloud/CoreXpkg/utils/logger"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 ```go
 package mypackage
 
-import "github.com/ArtisanCloud/CoreX/pkg/logger"
+import "github.com/ArtisanCloud/CoreXpkg/utils/logger"
 
 func SomeFunction() {
     // 直接使用全局Logger函数

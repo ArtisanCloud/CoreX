@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ArtisanCloud/CoreX/pkg/logger/config"
+	"github.com/ArtisanCloud/CoreX/pkg/utils/logger/config"
 )
 
 type LokiWriter struct {

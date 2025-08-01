@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/ArtisanCloud/CoreX/config"
-	"github.com/ArtisanCloud/CoreX/pkg/logger"
+	"github.com/ArtisanCloud/CoreXpkg/utils/logger"
 	"go.uber.org/zap"
 )
 

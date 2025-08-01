@@ -10,8 +10,8 @@ import (
 	"github.com/ArtisanCloud/CoreX/config"
 	"github.com/ArtisanCloud/CoreX/pkg/auth"
 	"github.com/ArtisanCloud/CoreX/pkg/event_bus"
-	"github.com/ArtisanCloud/CoreX/pkg/logger"
 	"github.com/ArtisanCloud/CoreX/pkg/low_code"
+	"github.com/ArtisanCloud/CoreX/pkg/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )

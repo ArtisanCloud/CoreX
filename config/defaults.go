@@ -1,7 +1,7 @@
 package config
 
 import (
-	logCfg "github.com/ArtisanCloud/CoreX/pkg/logger/config"
+	logCfg "github.com/ArtisanCloud/CoreX/pkg/utils/logger/config"
 )
 
 // GetDefaults 返回默认配置

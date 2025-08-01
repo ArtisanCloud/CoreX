@@ -6,11 +6,11 @@ import (
 	"os"
 	"sync"
 
-	lumberjack "github.com/ArtisanCloud/CoreX/pkg/logger/lib"
-	"github.com/ArtisanCloud/CoreX/pkg/logger/utils"
+	lumberjack "github.com/ArtisanCloud/CoreX/pkg/utils/logger/lib"
+	"github.com/ArtisanCloud/CoreX/pkg/utils/logger/utils"
 
-	"github.com/ArtisanCloud/CoreX/pkg/logger/config"
-	"github.com/ArtisanCloud/CoreX/pkg/logger/writer"
+	"github.com/ArtisanCloud/CoreX/pkg/utils/logger/config"
+	"github.com/ArtisanCloud/CoreX/pkg/utils/logger/writer"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
