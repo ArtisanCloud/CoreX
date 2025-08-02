@@ -21,7 +21,7 @@ func NewAgent(ctx context.Context, cfg *AgentConfig) (contract.Agent, error) {
 	case "eino":
 		// 由 eino 包提供构造函数（你在 drivers/eino 里实现）
 		// 约定 eino 包有一个 NewAgentFromConfig 接口接收 AgentConfig 或拆解后的依赖
-		agent, err := eino.NewAgentFromConfig(ctx, &eino.Config{
+		agent, err := eino.NewAgent(&eino.Config{
 			IntentPrompt:    cfg.IntentPrompt,
 			ContextMetadata: cfg.ContextMetadata,
 			RetryPolicy:     cfg.RetryPolicy,

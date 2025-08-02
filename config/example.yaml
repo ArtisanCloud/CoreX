@@ -38,7 +38,7 @@ event_bus:
   redis_password: ""
   dedupe_ttl_sec: 30
 
-low_code:
+dynamic_form:
   max_concurrent_flows: 10
   default_timeout_sec: 60
 

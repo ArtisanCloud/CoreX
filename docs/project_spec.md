@@ -20,7 +20,7 @@
 
 | 项目        | 规范示例                                        |
 | --------- | ------------------------------------------- |
-| Go 包 / 目录 | `agent_tools`, `event_bus`, `low_code`      |
+| Go 包 / 目录 | `agent_tools`, `event_bus`, `dynamic_form`      |
 | Go 文件     | `flow_executor.go`, `feature_flag.go`       |
 | Go 测试文件   | `flow_executor_test.go`                     |
 | 类型/接口/结构体 | `EventBus`, `LowCodeFlow`                   |
@@ -108,7 +108,7 @@ echo "命名规范检查通过"
     /event_bus/                  # 事件总线（内部解耦与联动）
       bus.go                   # 发布/订阅核心、事件结构定义、基础过滤、优先级调度、幂等校验、重试逻辑
       subscriber.go           # 订阅封装：条件订阅、失败降级、重试策略、幂等性保障（包装下游 handler）
-    /low_code/                  # 低代码动态 flow/form 执行引擎
+    /dynamic_form/                  # 低代码动态 flow/form 执行引擎
       schema.go               # flow/form 定义 schema（trigger、condition、steps、vars、outputs、error handling 结构）
       form_executor.go        # 表单解析/校验/映射、输入转换、默认值注入、与 flow step 绑定执行
     /comm/                      # 实时通信层（状态 & 事件推送）
@@ -147,7 +147,7 @@ echo "命名规范检查通过"
         error_mapper.go        # 内部 error -> gRPC status 映射统一化（兼容客户端规范）
   /docs/                        # 配套文档（示例 + 规范）——人/AI 共用契约
     style_guide.md             # 命名/结构/编码风格（本规范），包含常见反模式、prompt 约定、示例生成指令
-    flow_schema.md            # low_code flow/form 结构定义详情 + 变量模板（JSON/YAML 版 schema）
+    flow_schema.md            # dynamic_form flow/form 结构定义详情 + 变量模板（JSON/YAML 版 schema）
     tool_contracts.md         # agent_tools 输入输出、权限、错误格式约定（调用方与实现方的契约）
     plugin_development.md     # 插件如何实现 & 注册 extension point（生命周期、hook 规范、扩展点文档）
     agent_prompt_templates.md # 智能体 prompt → flow/tool 映射模板（few-shot 实例、上下文注入格式、fallback 策略描述）
@@ -235,7 +235,7 @@ echo "命名规范检查通过"
 
 1. 客户画像通过 agent 读取（走 `api/http` → middleware 注入身份/feature gating → `pkg/agent` 调用 `get_customer_profile` tool）。
 2. Agent 决策后调用 `apply_tag` tool，触发 `on_tag_applied` 插件（`pkg/plugin` 处理同步逻辑）。
-3. 基于标签结果，Agent 启动一个复购 flow（`start_flow`），由 `pkg/low_code` 执行器调度步骤。
+3. 基于标签结果，Agent 启动一个复购 flow（`start_flow`），由 `pkg/dynamic_form` 执行器调度步骤。
 4. flow 中的状态与插件反馈通过 `pkg/event_bus` 发散，前端通过 `pkg/comm/websocket` 订阅呈现。
 5. 所有阶段 trace 被 `internal/middleware` 记录（auth/license/logging/error），健康状态由 `api/http/health.go` 汇总暴露。
 

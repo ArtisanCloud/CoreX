@@ -16,7 +16,7 @@ type Config struct {
 	LogConfig   logCfg.LogConfig    `yaml:"logging_config"` // 输出配置
 	Auth        AuthConfig          `yaml:"auth"`           // JWT / 认证相关
 	EventBus    EventBusConfig      `yaml:"event_bus"`      // 事件总线（local/redis）
-	LowCode     LowCodeConfig       `yaml:"low_code"`       // flow 执行相关
+	LowCode     LowCodeConfig       `yaml:"dynamic_form"`   // flow 执行相关
 	AgentTools  factory.AgentConfig `yaml:"agent_tools"`    // 智能体工具注册/限流等
 	FeatureGate FeatureGateConfig   `yaml:"feature_gate"`   // 细粒度开关、license
 }

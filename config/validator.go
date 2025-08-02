@@ -35,10 +35,10 @@ func (c *Config) Validate() error {
 
 	// 验证低代码配置
 	if c.LowCode.MaxConcurrentFlows <= 0 {
-		errors = append(errors, "low_code.max_concurrent_flows 必须大于0")
+		errors = append(errors, "dynamic_form.max_concurrent_flows 必须大于0")
 	}
 	if c.LowCode.DefaultTimeoutSec <= 0 {
-		errors = append(errors, "low_code.default_timeout_sec 必须大于0")
+		errors = append(errors, "dynamic_form.default_timeout_sec 必须大于0")
 	}
 
 	// 验证日志配置

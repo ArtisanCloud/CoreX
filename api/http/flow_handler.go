@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/ArtisanCloud/CoreX/pkg/auth"
+	"github.com/ArtisanCloud/CoreX/pkg/dynamic_form"
 	"github.com/ArtisanCloud/CoreX/pkg/event_bus"
-	"github.com/ArtisanCloud/CoreX/pkg/low_code"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,9 +17,9 @@ func StartFlowHandler(c *gin.Context) {
 	traceID := auth.GetTraceID(ctx)
 
 	// 构建示例流程
-	flow := low_code.Flow{
+	flow := dynamic_form.Flow{
 		Name: "example_flow",
-		Steps: []low_code.Step{
+		Steps: []dynamic_form.Step{
 			{
 				ToolName: "apply_tag",
 				Input: map[string]interface{}{
@@ -31,7 +31,7 @@ func StartFlowHandler(c *gin.Context) {
 	}
 
 	// 执行流程
-	if err := low_code.ExecuteFlow(ctx, flow); err != nil {
+	if err := dynamic_form.ExecuteFlow(ctx, flow); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
