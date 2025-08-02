@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/ArtisanCloud/CoreX/pkg/agent/factory"
 	logCfg "github.com/ArtisanCloud/CoreX/pkg/utils/logger/config"
 )
 
@@ -52,8 +53,8 @@ func GetDefaults() *Config {
 			MaxConcurrentFlows: 10,
 			DefaultTimeoutSec:  60,
 		},
-		AgentTools: AgentToolsConfig{
-			EnableAudit: true,
+		AgentTools: factory.AgentConfig{
+			// EnableAudit: true,
 		},
 		FeatureGate: FeatureGateConfig{
 			LicenseKey: "demo-license-xyz",

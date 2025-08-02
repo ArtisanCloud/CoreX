@@ -73,9 +73,6 @@ config/production.yaml
 coverage.out
 coverage.html
 
-# 文档生成文件
-docs/build/
-
 # Node.js相关（如果有前端资源）
 node_modules/
 npm-debug.log*

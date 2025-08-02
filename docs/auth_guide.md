@@ -247,10 +247,10 @@ auth:
 
 ```bash
 # 新格式环境变量
-export COREX_AUTH_JWT_SECRET="your-32-char-secret-key"
-export COREX_AUTH_EXPECTED_AUDIENCE="admin"
-export COREX_AUTH_REQUIRED_SCOPES="user:read,user:write"
-export COREX_AUTH_TOKEN_TTL_HOURS=24
+export CORE_X_AUTH_JWT_SECRET="your-32-char-secret-key"
+export CORE_X_AUTH_EXPECTED_AUDIENCE="admin"
+export CORE_X_AUTH_REQUIRED_SCOPES="user:read,user:write"
+export CORE_X_AUTH_TOKEN_TTL_HOURS=24
 
 # 兼容旧格式
 export CORE_X_JWT_SECRET="your-secret-key"
@@ -303,9 +303,9 @@ if len(secret) < MinSecretLength {
 }
 
 // ✅ 推荐：从环境变量读取密钥
-secret := os.Getenv("COREX_AUTH_JWT_SECRET")
+secret := os.Getenv("CORE_X_AUTH_JWT_SECRET")
 if secret == "" {
-    return fmt.Errorf("必须设置COREX_AUTH_JWT_SECRET环境变量")
+    return fmt.Errorf("必须设置CORE_X_AUTH_JWT_SECRET环境变量")
 }
 ```
 

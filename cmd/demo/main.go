@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	apiHttp "github.com/ArtisanCloud/CoreX/api/http"
 	"github.com/ArtisanCloud/CoreX/config"
 	httpRouter "github.com/ArtisanCloud/CoreX/internal/http"
-	"github.com/ArtisanCloud/CoreX/pkg/auth"
 	"github.com/ArtisanCloud/CoreX/pkg/event_bus"
 	"github.com/ArtisanCloud/CoreX/pkg/utils/logger"
-	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -53,9 +50,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 3. 初始化 auth（JWT secret、middleware）
-	authMiddleware := initAuth(cfg)
-
 	// 3. 初始化工具（agent_tools）
 	initTools()
 
@@ -63,9 +57,7 @@ func main() {
 	initEventBus()
 
 	// 5. 构建 router 并挂载路由
-	r := httpRouter.SetupRouter(authMiddleware, func(r *gin.Engine) {
-		apiHttp.RegisterAPIRoutes(r, authMiddleware, cfg)
-	})
+	r := httpRouter.SetupRouter(cfg)
 
 	// 6. 打印路由信息
 	httpRouter.PrintRouteInfo(r, cfg)
@@ -84,19 +76,6 @@ func initLogger(cfg *config.Config) error {
 	// 测试全局Logger是否工作正常
 	logger.Info(context.Background(), "🚀 全局Logger初始化成功")
 	return nil
-}
-
-// initAuth 设置全局 JWT secret 并返回 gin middleware 实例
-func initAuth(cfg *config.Config) gin.HandlerFunc {
-	// 赋值给 auth 包
-	auth.SetJWTSecret([]byte(cfg.Auth.JWTSecret))
-
-	// 使用配置中的认证参数
-	expectedAudience := cfg.Auth.ExpectedAudience
-	requiredScopes := cfg.Auth.RequiredScopes
-
-	// 传入 SampleCallback 做扩展判断&事件广播
-	return auth.JwtMiddleware(expectedAudience, requiredScopes, auth.SampleCallback)
 }
 
 // initTools 注册 agent_tools（apply_tag 已在其 init 里注册，示例保底）

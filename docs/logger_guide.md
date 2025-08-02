@@ -180,9 +180,9 @@ func ProcessUser(userID string) error {
 您也可以通过环境变量覆盖日志配置：
 
 ```bash
-export COREX_LOGGING_LEVEL=info
-export COREX_LOGGING_CONSOLE=true
-export COREX_LOGGING_FILE_ENABLE=true
+export CORE_X_LOGGING_LEVEL=info
+export CORE_X_LOGGING_CONSOLE=true
+export CORE_X_LOGGING_FILE_ENABLE=true
 ```
 
 ## 📁 示例代码

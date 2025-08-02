@@ -63,21 +63,3 @@ func FeatureInjectionMiddleware() gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-// Helper to mount protected group
-func ProtectedGroup(r *gin.Engine, path string, authMiddleware gin.HandlerFunc) *gin.RouterGroup {
-	g := r.Group(path)
-	g.Use(authMiddleware)
-	return g
-}
-
-// Example usage (to be called from main bootstrap):
-//
-// router := http.SetupRouter(authMiddleware, func(r *gin.Engine) {
-//     r.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status":"ok"}) })
-//     protected := http.ProtectedGroup(r, "/api", authMiddleware)
-//     protected.POST("/start_flow", startFlowHandler)
-// })
-//
-// // 订阅事件
-// event_bus.Subscribe("flow_completed", func(e event_bus.Event) error { ... })
