@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/ArtisanCloud/CoreX/api/http/agent"
 	"github.com/ArtisanCloud/CoreX/config"
 	"github.com/gin-gonic/gin"
 )
@@ -19,10 +20,8 @@ func RegisterAPIRoutes(r *gin.Engine, authMiddleware gin.HandlerFunc, cfg *confi
 	publicGroup.POST("/auth/generate_token", GenerateTokenHandler(cfg))
 
 	// 受保护的API组
-	protected := r.Group(prefix)
-	protected.Use(authMiddleware)
+	protectedGroup := r.Group(prefix)
+	protectedGroup.Use(authMiddleware)
 
-	gFlow := protected.Group("/flows")
-	// 启动流程端点
-	gFlow.POST("/start_flow", StartFlowHandler)
+	agent.RegisterAPIRoutes(publicGroup, protectedGroup)
 }
