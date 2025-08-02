@@ -72,6 +72,24 @@ echo "命名规范检查通过"
   /cmd/
     /demo/                        # 示例启动器（参考实现，用于本地调试、集成测试）
       main.go                     # 引导 bootstrap：初始化 plugin, agent_tools, event_bus，挂载 internal/middleware，启动 HTTP/gRPC/WebSocket/SSE 服务，构建 tenant/trace/log 上下文
+  domain/                       # 公共 domain 模块（领域模型，如 Pagination 等）
+    /model/
+      base_model.go                       # 基础数据模型(非数据库对象)
+    /repository/
+      base_repository.go        # 基础 repository interface（CRUD）
+
+  infra/
+    /persistence/
+      /model/
+        base_gorm.go          # 数据库模型（GORM）
+      /repository/               # 数据库访问器：基础 CRUD
+        base_repository.go           # 基础数据库访问器（CRUD）
+        pagination_repository.go     # 分页逻辑、空值处理（SQL 专用）
+    /database/                  # 数据库连接与相关工具
+      connection.go
+      migration.go
+      transaction.go
+  
   /pkg/                           # 暴露给下游的能力库（可被 PowerX / MediaX 直接 import 复用）
     /auth/                        # 认证与鉴权
       middleware.go              # HTTP/gRPC 中间件：token 解析/校验（JWT、API Key）、权限判断、注入 tenant_id/user_id 等上下文
@@ -109,8 +127,12 @@ echo "命名规范检查通过"
       bus.go                   # 发布/订阅核心、事件结构定义、基础过滤、优先级调度、幂等校验、重试逻辑
       subscriber.go           # 订阅封装：条件订阅、失败降级、重试策略、幂等性保障（包装下游 handler）
     /dynamic_form/                  # 低代码动态 flow/form 执行引擎
-      schema.go               # flow/form 定义 schema（trigger、condition、steps、vars、outputs、error handling 结构）
-      form_executor.go        # 表单解析/校验/映射、输入转换、默认值注入、与 flow step 绑定执行
+      /pkg/dynamic_form/
+          model/         # 表单 schema（field/validation/condition/variables）
+          executor/      # 表单执行器：验证/条件/默认/输出清洗（Standalone 用途）
+          runtime/       # 运行时上下文（输入、变量、trace，主要在复杂字段依赖中用）
+          api/           # 表单相关 HTTP 接口（schema 获取、校验、提交）
+          adapter/       # 可选：将表单结果适配成某个 PlanStep/Node 所需的参数格式（仅转换，不做 plan 逻辑）
     /comm/                      # 实时通信层（状态 & 事件推送）
       /websocket/              # WebSocket 实现
         hub.go                # 连接管理、主题订阅、广播、分类路由、trace id 关联
@@ -125,6 +147,7 @@ echo "命名规范检查通过"
       validator.go           # schema 校验、组合规则、错误汇总
       mask.go                # 脱敏策略（基于角色/视图：admin vs miniapp）、字段级处理
       context_key.go         # context key 常量定义（避免字符串冲突与 typo）
+  
   /internal/                     # 不暴露的实现细节（支撑层，业务不可直接 import，走 pkg / api 访问）
     /storage/                   # 持久化接口抽象（接口定义，可插 GORM / mock / pluggable store，实现替换与测试隔离）
     /http/                      # 共享 HTTP 封装与路由组合逻辑

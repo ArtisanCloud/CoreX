@@ -37,8 +37,11 @@ func loadConfig() (*config.Config, error) {
 }
 
 func main() {
+	// ctx := context.Background()
+
 	// 1. 加载统一配置
 	cfg, err := loadConfig()
+	// logger.DebugF(ctx, "全局配置：%+v", cfg)
 	if err != nil {
 		fmt.Printf("配置加载失败: %v\n", err)
 		os.Exit(1)

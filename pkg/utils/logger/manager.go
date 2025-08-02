@@ -2,8 +2,11 @@ package logger
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
 	"sync"
 
 	lumberjack "github.com/ArtisanCloud/CoreX/pkg/utils/logger/lib"
@@ -176,6 +179,81 @@ func (l *Logger) extractFieldsFromContext(ctx context.Context) []zap.Field {
 	return fields
 }
 
+// PrettyJson 美化 JSON 输出
+func (l *Logger) PrettyJson(data interface{}) (string, error) {
+	// 使用 json.MarshalIndent 替代 bytes.Buffer 方式
+	jsonBytes, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		return "", err
+	}
+	return string(jsonBytes), nil
+}
+
+// formatMessage 格式化消息，支持结构化数据的美化输出
+func (l *Logger) formatMessage(format string, args ...interface{}) string {
+	// 如果只有一个参数且是结构体或复杂对象，尝试美化 JSON 输出
+	if len(args) == 1 && l.shouldPrettyPrint(format, args[0]) {
+		if prettyJson, err := l.PrettyJson(args[0]); err == nil {
+			// 移除末尾的换行符
+			prettyJson = strings.TrimSuffix(prettyJson, "\n")
+
+			// 如果是控制台输出且不使用 JSON 格式，直接输出美化的内容
+			if l.config.Console && !l.config.UseJsonFormat {
+				// 提取格式字符串的前缀部分
+				prefix := format
+				if strings.Contains(format, "%+v") {
+					prefix = strings.Split(format, "%+v")[0]
+				} else if strings.Contains(format, "%v") {
+					prefix = strings.Split(format, "%v")[0]
+				}
+
+				// 直接在控制台输出美化的 JSON
+				fmt.Printf("%s\n%s\n", prefix, prettyJson)
+				return "" // 返回空字符串，避免 zap 重复输出
+			}
+
+			// 对于其他情况，直接替换格式字符串
+			if strings.Contains(format, "%+v") {
+				return strings.ReplaceAll(format, "%+v", "\n"+prettyJson)
+			}
+			if strings.Contains(format, "%v") {
+				return strings.ReplaceAll(format, "%v", "\n"+prettyJson)
+			}
+		}
+	}
+
+	// 默认使用标准格式化
+	return fmt.Sprintf(format, args...)
+}
+
+// shouldPrettyPrint 判断是否应该进行美化输出
+func (l *Logger) shouldPrettyPrint(format string, arg interface{}) bool {
+	// 检查格式字符串是否包含 %+v 或 %v
+	if !strings.Contains(format, "%+v") && !strings.Contains(format, "%v") {
+		return false
+	}
+
+	// 检查参数类型
+	if arg == nil {
+		return false
+	}
+
+	v := reflect.ValueOf(arg)
+	switch v.Kind() {
+	case reflect.Struct, reflect.Map, reflect.Slice, reflect.Array:
+		return true
+	case reflect.Ptr:
+		if v.IsNil() {
+			return false
+		}
+		elem := v.Elem()
+		return elem.Kind() == reflect.Struct || elem.Kind() == reflect.Map ||
+			elem.Kind() == reflect.Slice || elem.Kind() == reflect.Array
+	default:
+		return false
+	}
+}
+
 // Info 输出 Info 日志 - 支持 context 作为第一个参数
 func (l *Logger) Info(ctx context.Context, msg string, fields ...zap.Field) {
 	l.WithContext(ctx).driver.Info(msg, fields...)
@@ -198,22 +276,34 @@ func (l *Logger) Warn(ctx context.Context, msg string, fields ...zap.Field) {
 
 // InfoF 格式化后输出 Info 日志 - 支持 context 作为第一个参数
 func (l *Logger) InfoF(ctx context.Context, format string, args ...interface{}) {
-	l.WithContext(ctx).driver.Info(fmt.Sprintf(format, args...))
+	message := l.formatMessage(format, args...)
+	if message != "" {
+		l.WithContext(ctx).driver.Info(message)
+	}
 }
 
 // ErrorF 格式化后输出 Error 日志 - 支持 context 作为第一个参数
 func (l *Logger) ErrorF(ctx context.Context, format string, args ...interface{}) {
-	l.WithContext(ctx).driver.Error(fmt.Sprintf(format, args...))
+	message := l.formatMessage(format, args...)
+	if message != "" {
+		l.WithContext(ctx).driver.Error(message)
+	}
 }
 
 // DebugF 格式化后输出 Debug 日志 - 支持 context 作为第一个参数
 func (l *Logger) DebugF(ctx context.Context, format string, args ...interface{}) {
-	l.WithContext(ctx).driver.Debug(fmt.Sprintf(format, args...))
+	message := l.formatMessage(format, args...)
+	if message != "" {
+		l.WithContext(ctx).driver.Debug(message)
+	}
 }
 
 // WarnF 格式化后输出 Warn 日志 - 支持 context 作为第一个参数
 func (l *Logger) WarnF(ctx context.Context, format string, args ...interface{}) {
-	l.WithContext(ctx).driver.Warn(fmt.Sprintf(format, args...))
+	message := l.formatMessage(format, args...)
+	if message != "" {
+		l.WithContext(ctx).driver.Warn(message)
+	}
 }
 
 // InitGlobalLogger 初始化全局Logger实例
